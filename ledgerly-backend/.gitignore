@@ -1,0 +1,14 @@
+# Node modules
+node_modules/
+
+# Environment
+.env
+.env.local
+!.env.example
+
+# Build output
+dist/
+build/
+
+# Prisma generated files
+/generated/
