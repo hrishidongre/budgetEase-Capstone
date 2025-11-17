@@ -76,7 +76,7 @@ export default function SignUp() {
 
         {/* Brand */}
         <h1 className="text-3xl font-bold text-center mb-1">
-          Ledg<span className="text-[#0D9488]">erly</span>
+          Budget<span className="text-[#0D9488]">Ease</span>
         </h1>
         <p className="text-center text-gray-600 text-sm mb-6">
           Enter your information to create your account
