@@ -111,6 +111,3 @@ Manually tracking expenses often becomes confusing and time-consuming. People st
 | `/api/budgets` | POST | Create/update budget | Authenticated |
 
 ---
-
-## Backend Server hosted Link -  https://ledgerly-capstone.onrender.com
-## Frontend Server hosted Link - https://ledgerly-capstone.vercel.app/
