@@ -62,10 +62,22 @@ router.post("/login", async (req, res) => {
 });
 
 //Logout
+// router.post("/logout", (req, res) => {
+//   res.clearCookie("token");
+//   res.json({ message: "Logged out successfully" });
+// });
 router.post("/logout", (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "none",
+    path: "/",   // this is the missing piece
+  });
+
   res.json({ message: "Logged out successfully" });
 });
+
+
 
 // Verify Token
 router.get("/verify", (req, res) => {
