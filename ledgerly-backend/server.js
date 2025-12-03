@@ -27,22 +27,29 @@ const allowedOrigins = [
 app.use(express.json());
 app.use(cookieParser());
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://budget-ease-capstone.vercel.app/"
+  ]
+}))
 
-      if (!origin) return callback(null, true); // mobile/postman
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+//       if (!origin) return callback(null, true); // mobile/postman
 
-      console.log("Blocked by CORS:", origin);
-      return callback(new Error("CORS Not Allowed"));
-    },
-    credentials: true,
-  })
-);
+//       if (allowedOrigins.includes(origin)) {
+//         return callback(null, true);
+//       }
+
+//       console.log("Blocked by CORS:", origin);
+//       return callback(new Error("CORS Not Allowed"));
+//     },
+//     credentials: true,
+//   })
+// );
 
 // Routes
 app.use("/api/auth", authRoutes);
