@@ -55,7 +55,7 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }) {
 
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/expense/add`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/expense/add`,
         {
           category: formData.category,
           name: formData.name,

@@ -36,7 +36,7 @@ function ResetPasswordContent() {
     }
 
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password`, {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/reset-password`, {
         token,
         newPassword: password,
       })

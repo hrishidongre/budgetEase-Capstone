@@ -37,7 +37,7 @@ export default function ExpensesPage() {
       try {
         // Check if API endpoint is available via HEAD request
         try {
-          await axios.head(`${process.env.NEXT_PUBLIC_API_URL}/expense`, {
+          await axios.head(`${process.env.NEXT_PUBLIC_API_URL}/api/expense`, {
             withCredentials: true,
             timeout: 3000,
           });
@@ -60,7 +60,7 @@ export default function ExpensesPage() {
 
         // Fetch expenses with pagination
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/expense`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/expense`,
           { params, withCredentials: true }
         );
 

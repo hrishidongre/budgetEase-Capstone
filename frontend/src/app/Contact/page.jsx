@@ -154,7 +154,7 @@ export default function Contact() {
       const { name, email, message } = formData;
 
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/contact`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/contact`,
         {
           name,
           email,
@@ -167,8 +167,6 @@ export default function Contact() {
           },
         }
       );
-
-      console.log("CONTACT RESPONSE:", response.data); // for verification
 
       setSuccess(true);
       setFormData({ name: "", email: "", message: "" });

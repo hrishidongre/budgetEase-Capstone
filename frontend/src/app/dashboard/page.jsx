@@ -38,7 +38,7 @@ export default function DashboardPage() {
       try {
         // Check if API endpoints exist via HEAD request
         try {
-          await axios.head(`${process.env.NEXT_PUBLIC_API_URL}/budget`, {
+          await axios.head(`${process.env.NEXT_PUBLIC_API_URL}/api/budget`, {
             withCredentials: true,
             timeout: 3000,
           });
@@ -51,7 +51,7 @@ export default function DashboardPage() {
         }
 
         try {
-          await axios.head(`${process.env.NEXT_PUBLIC_API_URL}/expense`, {
+          await axios.head(`${process.env.NEXT_PUBLIC_API_URL}/api/expense`, {
             withCredentials: true,
             timeout: 3000,
           });
@@ -65,10 +65,10 @@ export default function DashboardPage() {
 
         // Fetch budgets and expenses in parallel
         const [budgetsRes, expensesRes] = await Promise.all([
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/budget`, {
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/budget`, {
             withCredentials: true,
           }),
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/expense`, {
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/expense`, {
             withCredentials: true,
           }),
         ]);
@@ -160,10 +160,10 @@ export default function DashboardPage() {
 
       try {
         const [catRes, budgetRes] = await Promise.all([
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/analytics/category-spending`, {
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/category-spending`, {
             withCredentials: true,
           }),
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/analytics/budget-summary`, {
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/budget-summary`, {
             withCredentials: true,
           }),
         ]);

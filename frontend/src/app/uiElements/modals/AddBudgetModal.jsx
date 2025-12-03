@@ -55,7 +55,7 @@ export default function AddBudgetModal({ isOpen, onClose, onSuccess }) {
 
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/budget/add`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/budget/add`,
         {
           category: formData.category,
           name: formData.name,

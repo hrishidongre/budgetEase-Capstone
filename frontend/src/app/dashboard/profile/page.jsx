@@ -93,7 +93,7 @@ export default function ProfilePage() {
 
     try {
       const response = await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL}/profile/delete-all`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/profile/delete-all`,
         { withCredentials: true }
       );
 

@@ -28,7 +28,7 @@ export default function ForgotPassword() {
     }
 
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password`, { email })
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/forgot-password`, { email })
       setSuccess("A reset link has been sent to your email")
     } catch (err) {
       setEmailError(err.response?.data?.message || "Something went wrong")

@@ -34,7 +34,7 @@ export default function TransactionsPage() {
       try {
         // Check if API endpoint exists via HEAD request
         try {
-          await axios.head(`${process.env.NEXT_PUBLIC_API_URL}/transactions/get`, {
+          await axios.head(`${process.env.NEXT_PUBLIC_API_URL}/api/transactions/get`, {
             withCredentials: true,
             timeout: 3000,
           });
@@ -60,7 +60,7 @@ export default function TransactionsPage() {
 
         // Fetch transactions with pagination
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/transactions/get`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/transactions/get`,
           { params, withCredentials: true }
         );
 
