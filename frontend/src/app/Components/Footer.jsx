@@ -38,7 +38,7 @@ export default function Footer() {
         <div>
           <h3 className="text-base font-semibold mb-3">Contact</h3>
           <ul className="text-sm space-y-2">
-            <li>Email: competitivehridon2024@gmail.com</li>
+            <li>Email: {process.env.NEXT_PUBLIC_EMAIL_USER}</li>
             <li>Phone: +91 91314-XXXXX</li>
             <li>Location: India</li>
           </ul>

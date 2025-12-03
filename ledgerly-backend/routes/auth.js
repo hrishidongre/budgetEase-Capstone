@@ -23,7 +23,22 @@ router.post("/signup", async (req, res) => {
       data: { fullName, email, password: hashedPassword },
     });
 
-    res.status(201).json({ message: "User created successfully", user });
+    // Generate JWT token
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+
+    // Set token in HTTP-only cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // false in dev, true in prod
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // lax in dev, none in prod
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Return user data (without password)
+    const { password: _, ...userWithoutPassword } = user;
+    res.status(201).json({ message: "User created successfully", user: userWithoutPassword, token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Internal server error" });
@@ -49,8 +64,8 @@ router.post("/login", async (req, res) => {
     // Send token in HTTP-only cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // only HTTPS in prod
-      sameSite: "none",
+      secure: process.env.NODE_ENV === "production", // false in dev, true in prod
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // lax in dev, none in prod
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -70,8 +85,8 @@ router.post("/logout", (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
-    path: "/",   // this is the missing piece
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
   });
 
   res.json({ message: "Logged out successfully" });
@@ -87,6 +102,28 @@ router.get("/verify", (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     res.json({ message: "Authenticated", userId: decoded.id });
+  } catch (err) {
+    res.status(401).json({ message: "Invalid or expired token" });
+  }
+});
+
+// Get current user (from token)
+router.get("/me", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Fetch full user data from database
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, fullName: true, email: true },
+    });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json(user);
   } catch (err) {
     res.status(401).json({ message: "Invalid or expired token" });
   }
@@ -162,5 +199,8 @@ router.post("/reset-password", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+
+
 
 export default router;

@@ -25,8 +25,39 @@ model User {
   id                Int       @id @default(autoincrement())
   email             String    @unique
   password          String
-  fullName String?
+  fullName          String?   // User's full name (merged first + last name)
+  avatarUrl         String?   // User's profile picture (Base64 or external URL)
   createdAt         DateTime  @default(now())
   resetToken        String?   // nullable
   resetTokenExp     DateTime? // expiry timestamp
+  budgets           Budget[]
+  expenses          Expense[]
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model Budget {
+  id        Int      @id @default(autoincrement())
+  category  String
+  name      String
+  amount    Float
+  createdAt DateTime @default(now())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id        Int      @id @default(autoincrement())
+  category  String
+  name      String
+  amount    Float
+  createdAt DateTime @default(now())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

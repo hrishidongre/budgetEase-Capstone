@@ -3,11 +3,13 @@
 import { useRouter } from 'next/navigation';
 import React, { useRef, useState } from 'react';
 import { authService } from '../../api/authService';
+import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 
 export default function SignUp() {
   const route = useRouter();
+  const { setUserData } = useAuth();
 
   const fullNameRef = useRef(null);
   const emailRef = useRef(null);
@@ -62,7 +64,13 @@ export default function SignUp() {
 
     try {
       const response = await authService.signup(fullName, email, password);
-      route.push('/login');
+      // Set user data immediately from signup response
+      if (response.user) {
+        setUserData(response.user);
+        route.push('/dashboard');
+      } else {
+        setError("Signup failed - no user data returned");
+      }
     } catch (err) {
       setError(err.message || "Signup failed");
     } finally {

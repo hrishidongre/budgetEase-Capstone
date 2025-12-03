@@ -56,4 +56,14 @@ export const authService = {
       return null; // user is not logged in
     }
   },
+
+  // GET CURRENT USER
+  async getMe() {
+    try {
+      const response = await apiClient.get('/auth/me');
+      return response.data;
+    } catch {
+      return null; // user is not logged in
+    }
+  },
 };

@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useEffect } from "react"
 import { authService } from "../../api/authService"
+import { useAuth } from "../../context/AuthContext"
 import { useRouter } from "next/navigation"
 import { Mail, Lock, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
@@ -10,6 +11,7 @@ export default function Login() {
   const emailRef = useRef(null)
   const passwordRef = useRef(null)
   const router = useRouter()
+  const { setUserData } = useAuth()
 
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -20,7 +22,7 @@ export default function Login() {
   useEffect(() => {
     async function checkUser() {
       try {
-        const user = await authService.verifyToken()
+        const user = await authService.getMe()
         if (user) router.push("/dashboard")
       } catch (err) {}
     }
@@ -49,12 +51,18 @@ export default function Login() {
     }
 
     try {
-      const response = await authService.login(email, password)
-      router.push("/dashboard")
+      const response = await authService.login(email, password);
+      // Set user data immediately from login response
+      if (response.user) {
+        setUserData(response.user);
+        router.push("/dashboard");
+      } else {
+        setError("Login failed - no user data returned");
+      }
     } catch (err) {
-      setError(err.message || "Login failed")
+      setError(err.message || "Login failed");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 

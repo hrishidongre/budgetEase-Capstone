@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 
 export default function Header() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -38,13 +38,13 @@ export default function Header() {
 
         {/* Auth Buttons */}
         <div className="flex flex-wrap justify-center md:justify-end gap-2">
-          {mounted && user ? (
+          {mounted && !loading && user ? (
             <Link href="/dashboard">
               <button className="px-5 py-2 text-sm font-medium bg-teal-600 text-white rounded-[10px] hover:bg-teal-700 transition duration-300">
                 Go to Dashboard
               </button>
             </Link>
-          ) : (
+          ) : mounted && !loading ? (
             <>
               <Link href="/login">
                 <button className="px-5 py-2 text-sm font-medium text-black border border-teal-600 rounded-[10px] hover:bg-teal-50 transition">
@@ -57,7 +57,7 @@ export default function Header() {
                 </button>
               </Link>
             </>
-          )}
+          ) : null}
         </div>
       </div>
     </header>

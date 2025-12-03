@@ -7,12 +7,23 @@ import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  if (!mounted || loading) {
+    return (
+      <div className="w-full min-h-screen bg-gradient-to-t from-teal-100 via-white to-teal-100 rounded-b-[80px] md:rounded-b-[150px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -29,17 +40,17 @@ export default function Home() {
             className="w-full max-w-[450px] sm:max-w-[600px] md:max-w-[750px] my-8"
           />
 
-          {mounted && user ? (
+          {user ? (
             <Link
               href="#features"
               className="font-semibold underline text-md transition-transform duration-300 hover:scale-[1.05] mt-4 mb-12 sm:mb-20"
-           >
+            >
               Check out the features
             </Link>
           ) : (
             <div className="flex flex-col md:flex-row items-center justify-center gap-4">
               <Link
-                href="/SignUp"
+                href="/signup"
                 className="text-white shadow font-semibold w-[140px] h-[50px] bg-[#0D9488] rounded-[10px] text-sm flex items-center justify-center transition-transform duration-300 hover:scale-[1.05] hover:shadow-lg"
               >
                 Get Started
@@ -87,8 +98,8 @@ export default function Home() {
             Join thousands of users who have transformed their financial lives
             with BudgetEase.
           </p>
-          {mounted && (
-            <Link href={user ? "/dashboard" : "/SignUp"}>
+          {(
+            <Link href={user ? "/dashboard" : "/signup"}>
               <button className="bg-white text-black hover:bg-gray-200 px-6 py-3 rounded-[10px] font-semibold transition">
                 {user ? "Go to Dashboard" : "Start Your Journey"}
               </button>

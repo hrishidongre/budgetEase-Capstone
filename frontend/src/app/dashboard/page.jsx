@@ -1,275 +1,318 @@
-'use client'
-import DHeader from './components/dashHeader'
-import AddBudgetDialog from "./components/addBudgetDialog"
-import AddExpenseDialog from './components/addExpenseDlalog'
-import StatsCard from './uiElements/StateCard'
-import BudgetCard from './components/BudgetCard'
-import Charts from './components/charts'
-import RecentTransaction from './components/recentTransaction'
-import { Wallet, TrendingUp, TrendingDown,RotateCcw } from 'lucide-react'
-import { useEffect, useState } from "react"
-import { useAuth } from "@/context/AuthContext"
+"use client";
 
-export default function Page() {
-  const { user } = useAuth();
-  const [chartData, setChartData] = useState([]);
-  const [recentTransactions, setRecentTransactions] = useState([ {
-    title: "Mock Expense",
-    category: "Demo",
-    amount: 100,
-    date: "2025-01-01",
-  },]);
-  const userId = user?.id;
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import { useAuth } from "@/context/AuthContext";
+import OverviewCards from "./UIelement/OverviewCards";
+import RecentActivity from "./UIelement/RecentActivity";
+import SpendingByCategory from "./UIelement/SpendingByCategory";
+import CategorySpendingChart from "./components/charts/CategorySpendingChart";
+import BudgetVsExpenseChart from "./components/charts/BudgetVsExpenseChart";
+import AddBudgetModal from "@/app/uiElements/modals/AddBudgetModal";
+import { Plus, AlertCircle } from "lucide-react";
 
-  const [totals, setTotals] = useState({
-    totalBudget: 0,
-    totalSpent: 0,
-    remaining: 0,
-  });
-  //This function is for the StateCards to show highlights of the budget
-  const fetchTotals = async () => {
-  const { data: budgetData, error: budgetError } = await supabase
-    .from("budget")
-    .select("amount")
-    .eq("user_id", userId);
+export default function DashboardPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [apiError, setApiError] = useState(null);
 
-  const { data: expenseData, error: expenseError } = await supabase
-    .from("expense")
-    .select("amount")
-    .eq("user_id", userId);
+  // Analytics state
+  const [categorySpending, setCategorySpending] = useState([]);
+  const [budgetSummary, setBudgetSummary] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState(null);
 
-  if (budgetError || expenseError) {
-    console.log("Error fetching totals", budgetError || expenseError);
-    return;
-  }
-
-
-  const totalBudget = budgetData.reduce((sum, b) => sum + Number(b.amount), 0);
-  const totalSpent = expenseData.reduce((sum, e) => sum + Number(e.amount), 0);
-  const remaining = totalBudget - totalSpent;
-
-  setTotals({ totalBudget, totalSpent, remaining });
-  };
-
-  // This function fetch chart data for category-wise spending
-  const fetchChartData = async () => {
-    const { data: budgetData, error: budgetError } = await supabase
-      .from("budget")
-      .select("category_name, amount")
-      .eq("user_id", userId);
-
-    const { data: expenseData, error: expenseError } = await supabase
-      .from("expense")
-      .select("category_name, amount")
-      .eq("user_id", userId);
-
-    if (budgetError || expenseError) {
-      return;
-    }
-
-    const budgetMap = {};
-    for (let b of budgetData) {
-      budgetMap[b.category_name] = (budgetMap[b.category_name] || 0) + b.amount;
-    }
-
-    const expenseMap = {};
-    for (let e of expenseData) {
-      expenseMap[e.category_name] = (expenseMap[e.category_name] || 0) + e.amount;
-    }
-
-    const categories = new Set([
-      ...Object.keys(budgetMap),
-      ...Object.keys(expenseMap),
-    ]);
-
-    const merged = Array.from(categories).map((category) => ({
-      name: category,
-      total: budgetMap[category] || 0,
-      spent: expenseMap[category] || 0,
-    }));
-
-    setChartData(merged);
-  };
-
-  
-
-  function getIconForCategory(category) {
-  const iconMap = {
-    "Entertainment": "🎬",
-    "Food & Dining": "🍽️",
-    "Transportation": "🚗",
-    "Shopping": "🛒",
-    "Bills & Utilities": "💡",
-    "Healthcare": "🏥",
-    "Education": "📚",
-    "Others": "📋",
-    "Travel":"✈️",
-    "Savings":"💰"
-  };
-
-  return iconMap[category] || "📦";
-}
-   
-   
-  const fetchRecentTransactions = async () => {
-  const { data, error } = await supabase
-    .from("expense")
-    .select("description, category_name, amount, created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(3); // Get last 5 recent transactions
-
-  if (error) {
-    console.log("Error fetching recent transactions:", error);
-    return;
-  }
-
-  const formatted = data.map(tx => ({
-    title: tx.description,
-    category: tx.category_name,
-    amount: parseFloat(tx.amount),
-    date: new Date(tx.created_at).toISOString().split("T")[0],
-  })
-  );
-
-  setRecentTransactions(formatted);
-};
-
-const handleResetData = async () => {
-
-  const confirmed = confirm("Are you sure you want to reset all your data? This cannot be undone.");
-  if (!confirmed) return;
-
-  // Delete from expense
-  const { error: expenseError } = await supabase
-    .from("expense")
-    .delete()
-    .eq("user_id", userId);
-
-  // Delete from budget
-  const { error: budgetError } = await supabase
-    .from("budget")
-    .delete()
-    .eq("user_id", userId);
-
-  if (expenseError || budgetError) {
-    console.error("Error resetting data:", expenseError || budgetError);
-    alert("Something went wrong while resetting data.");
-    return;
-  }
-
-  // Refresh UI
-  fetchTotals();
-  fetchChartData();
-  fetchRecentTransactions();
-  alert("Your data has been reset.");
-};
-
-
-
-
+  // Fetch dashboard data
   useEffect(() => {
-    if (userId) {
-      fetchTotals();
-      fetchChartData(); 
-      fetchRecentTransactions();
-    }
-  }, [userId]);
-  
+    if (!user?.id) return;
 
-  return (
-    <div className="min-h-screen bg-blue-50">
-      <DHeader />
-      {/* Header Title and Buttons */}
-      <div className="max-w-6xl mx-auto px-4 pt-6">
-        <div className="flex flex-col md:flex-row justify-between gap-6 mb-8">
-          <div className="flex-1">
-            <h1 className="text-4xl font-bold text-gray-900 leading-tight mb-4">
-              Your
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-600"> Finances, Organized.</span>
-            </h1>
-           <div className="w-full flex justify-center sm:justify-start">
-              <div className="flex flex-col sm:flex-row items-center gap-3">
-                <AddBudgetDialog
-                  onBudgetAdded={() => {
-                    fetchTotals();
-                    fetchChartData();
-                  }}
-                />
-                <AddExpenseDialog
-                  onExpenseAdded={() => {
-                    fetchTotals();
-                    fetchChartData();
-                    fetchRecentTransactions();
-                  }}
-                />
-                <button
-                  onClick={handleResetData}
-                  className="flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 transition"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Reset Budget
-                </button>
-              </div>
-            </div>
-          </div>
-          {/* Recent Transactions */}
-          <div className="w-full md:w-[300px]">
-            <RecentTransaction transactions={recentTransactions} />
-          </div>
-        </div>
+    const fetchDashboardData = async () => {
+      setDataLoading(true);
+      setApiError(null);
 
-        {/* Stats Cards Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <StatsCard
-            title="Total Budget"
-            value={new Intl.NumberFormat("en-IN", {
-              style: "currency",
-              currency: "INR",
-            }).format(totals.totalBudget)}
-            icon={Wallet}
-            color="text-blue-600"
-            trend="Monthly allocation"
-          />
-          <StatsCard
-            title="Total Spent"
-            value={new Intl.NumberFormat("en-IN", {
-              style: "currency",
-              currency: "INR",
-            }).format(totals.totalSpent.toFixed(2))}
-            icon={TrendingUp}
-            color="text-red-600"
-            trend={`${((totals.totalSpent / totals.totalBudget) * 100 || 0).toFixed(1)}% of budget`}
-          />
-          <StatsCard
-            title="Remaining"
-            value={new Intl.NumberFormat("en-IN", {
-              style: "currency",
-              currency: "INR",
-            }).format(totals.remaining.toFixed(2))}
-            icon={totals.remaining >= 0 ? TrendingDown : TrendingUp}
-            color={totals.remaining >= 0 ? "text-green-600" : "text-red-600"}
-            trend={totals.remaining >= 0 ? "Under budget" : "Over budget"}
-          />
+      try {
+        // Check if API endpoints exist via HEAD request
+        try {
+          await axios.head(`${process.env.NEXT_PUBLIC_API_URL}/budget`, {
+            withCredentials: true,
+            timeout: 3000,
+          });
+        } catch (err) {
+          if (err.response?.status === 404) {
+            setApiError("Budget API endpoint not available");
+            setDataLoading(false);
+            return;
+          }
+        }
+
+        try {
+          await axios.head(`${process.env.NEXT_PUBLIC_API_URL}/expense`, {
+            withCredentials: true,
+            timeout: 3000,
+          });
+        } catch (err) {
+          if (err.response?.status === 404) {
+            setApiError("Expense API endpoint not available");
+            setDataLoading(false);
+            return;
+          }
+        }
+
+        // Fetch budgets and expenses in parallel
+        const [budgetsRes, expensesRes] = await Promise.all([
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/budget`, {
+            withCredentials: true,
+          }),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/expense`, {
+            withCredentials: true,
+          }),
+        ]);
+
+        const budgets = budgetsRes.data?.data || [];
+        const expenses = expensesRes.data?.data || [];
+
+        // Calculate derived stats
+        const totalBudget = budgets.reduce((sum, b) => sum + (b.amount || 0), 0);
+        const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+        const totalBalance = totalBudget - totalExpenses;
+
+        // Calculate monthly income and expenses (current month)
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        const monthlyExpenses = expenses
+          .filter((e) => {
+            const date = new Date(e.createdAt);
+            return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+          })
+          .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+        const monthlyIncome = budgets
+          .filter((b) => {
+            const date = new Date(b.createdAt);
+            return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+          })
+          .reduce((sum, b) => sum + (b.amount || 0), 0);
+
+        // Calculate monthly savings
+        const monthlySavings = monthlyIncome - monthlyExpenses;
+
+        // Recent activity (last 5 expenses)
+        const recentActivity = expenses.slice(0, 5).map((e) => ({
+          id: e.id,
+          title: e.name,
+          category: e.category,
+          amount: e.amount,
+          date: e.createdAt,
+          type: "expense",
+        }));
+
+        // Spending by category
+        const spendingByCategory = expenses.reduce((acc, e) => {
+          const existing = acc.find((item) => item.category === e.category);
+          if (existing) {
+            existing.amount += e.amount;
+          } else {
+            acc.push({ category: e.category, amount: e.amount });
+          }
+          return acc;
+        }, []);
+
+        setDashboardData({
+          budgets,
+          expenses,
+          totalBalance,
+          monthlyExpenses,
+          monthlyIncome,
+          income: totalBudget,
+          savings: monthlySavings,
+          recentActivity,
+          spendingByCategory,
+        });
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        if (err.response?.status === 404) {
+          setApiError("Backend API not available");
+        } else {
+          setApiError("Failed to load dashboard data. Please try again.");
+        }
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user?.id, refreshTrigger]);
+
+  // Fetch analytics data
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchAnalyticsData = async () => {
+      setAnalyticsLoading(true);
+      setAnalyticsError(null);
+
+      try {
+        const [catRes, budgetRes] = await Promise.all([
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/analytics/category-spending`, {
+            withCredentials: true,
+          }),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/analytics/budget-summary`, {
+            withCredentials: true,
+          }),
+        ]);
+
+        setCategorySpending(catRes.data?.data || []);
+        setBudgetSummary(budgetRes.data?.data || null);
+      } catch (err) {
+        console.error("Error fetching analytics data:", err);
+        setAnalyticsError("Failed to load analytics data");
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    };
+
+    fetchAnalyticsData();
+  }, [user?.id, refreshTrigger]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
-      {/* Budgets & Chart */}
-      <div className="flex flex-col lg:flex-row gap-6 px-4 sm:px-6 py-6">
-        <div className="w-full lg:w-1/3 flex flex-col gap-5">
-          {chartData.map((item) => (
-            <BudgetCard
-              key={item.name}
-              category={item.name}
-              budget={item.total}
-              spent={item.spent}
-              icon={getIconForCategory(item.name)}
-            />
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            You are not logged in
+          </h1>
+          <p className="text-gray-600 mb-6">Please sign up to continue</p>
+          <button
+            onClick={() => router.push("/signup")}
+            className="px-6 py-2 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition"
+          >
+            Sign Up
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading skeleton for dashboard data
+  if (dataLoading || analyticsLoading) {
+    return (
+      <div className="min-h-screen bg-white p-4 sm:p-6 md:p-8 space-y-10">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Welcome, {user.fullName || "User"}
+            </h1>
+            <p className="text-gray-500 mt-1">Here's your financial overview.</p>
+          </div>
+        </div>
+
+        {/* Skeleton loaders */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-24 bg-gray-200 rounded-lg animate-pulse"
+            ></div>
           ))}
         </div>
-        <div className="w-full lg:w-2/3">
-          <Charts data={chartData} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="h-64 bg-gray-200 rounded-lg animate-pulse"></div>
+          <div className="h-64 bg-gray-200 rounded-lg animate-pulse"></div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-80 bg-gray-200 rounded-lg animate-pulse"
+            ></div>
+          ))}
         </div>
       </div>
+    );
+  }
+
+  // API error state
+  if (apiError) {
+    return (
+      <div className="min-h-screen bg-white p-4 sm:p-6 md:p-8 flex items-center justify-center">
+        <div className="p-4 bg-red-100 border border-red-300 rounded-lg text-red-700 text-center max-w-md">
+          Backend API not available. Please start the server.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white p-4 sm:p-6 md:p-8 space-y-10">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Welcome, {user.fullName || "User"}
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Here's your financial overview.
+          </p>
+        </div>
+        <button
+          onClick={() => setIsBudgetModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
+        >
+          <Plus size={20} />
+          Add Budget
+        </button>
+      </div>
+
+      <OverviewCards data={dashboardData} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <RecentActivity activities={dashboardData?.recentActivity || []} />
+        <SpendingByCategory spending={dashboardData?.spendingByCategory || []} />
+      </div>
+
+      {/* Analytics Charts Section */}
+      <div className="space-y-8">
+        <h2 className="text-xl font-semibold text-gray-900">Analytics - Current Month</h2>
+        
+        {analyticsError && (
+          <div className="p-4 bg-yellow-100 border border-yellow-300 rounded-lg text-yellow-700">
+            {analyticsError}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <CategorySpendingChart data={categorySpending} />
+          <BudgetVsExpenseChart data={budgetSummary || {}} />
+        </div>
+      </div>
+
+      <AddBudgetModal
+        isOpen={isBudgetModalOpen}
+        onClose={() => setIsBudgetModalOpen(false)}
+        onSuccess={() => {
+          setIsBudgetModalOpen(false);
+          setRefreshTrigger((prev) => prev + 1);
+        }}
+      />
     </div>
   );
 }

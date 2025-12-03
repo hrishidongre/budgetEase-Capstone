@@ -3,6 +3,15 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
+import contactRoutes from "./routes/contact.js";
+import dashboardRoutes from "./routes/dashboard.js";
+import budgetRoutes from "./routes/budget.js";
+import expenseRoutes from "./routes/expense.js";
+import transactionRoutes from "./routes/transactions.js";
+import profileRoutes from "./routes/profile.js";
+import analyticsRoutes from "./routes/analytics.js";
+import { verifyToken } from "./middleware/auth.js";
+
 
 dotenv.config();
 
@@ -37,6 +46,13 @@ app.use(
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/contact", contactRoutes);
+app.use("/api/dashboard", verifyToken, dashboardRoutes);
+app.use("/api/budget", budgetRoutes);
+app.use("/api/expense", expenseRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // Server
 const PORT = process.env.PORT || 5050;
