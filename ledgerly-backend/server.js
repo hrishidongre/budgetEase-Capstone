@@ -31,7 +31,8 @@ app.use(cors({
   origin: [
     "http://localhost:3000",
     "https://budget-ease-capstone.vercel.app/"
-  ]
+  ],
+  credentials: true,
 }))
 
 // app.use(
